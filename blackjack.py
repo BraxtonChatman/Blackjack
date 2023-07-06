@@ -41,10 +41,17 @@ class Player:
         
 
 def display_rules():
+    """print the rules out to the screen"""
+    pass
+
+
+def change_settings():
+    """enter menu for user to change game settings or return to home menu"""
     pass
 
 
 def play_game():
+    """play blackjack simulation"""
     pass
 
 
@@ -55,11 +62,14 @@ def main():
         print()
         print("1. Play")
         print("2. Rules")
-        print("3. Exit\n")
+        print("3. Settings")
+        print("4. Exit\n")
         
         selection_choice = ""
         selection_choice = input()
-        while selection_choice.lower() not in ['1', '2', '3', 'p', 'play', 'r', 'rule', 'rules', 'e', 'exit']:
+        while selection_choice.lower() not in ['1', '2', '3', '4', 'p', 'play',
+                                               'r', 'rule', 'rules', 's', 'set',
+                                               'setting', 'settings', 'e', 'exit']:
             print("Please make a valid selection...")
             selection_choice = input()
         
@@ -71,7 +81,11 @@ def main():
             display_rules()
             selection_choice = ""
 
-        if selection_choice.lower() in ['3', 'e', 'exit']:
+        if selection_choice.lower() in ['3', 's', 'set', 'setting', 'settings']:
+            change_settings()
+            selection_choice = ""
+
+        if selection_choice.lower() in ['4', 'e', 'exit']:
             print("Thank you for playing\n")
             exit()
 
