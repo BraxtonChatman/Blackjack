@@ -5,8 +5,11 @@ This script runs a simulation of a game of Blackjack
 from random import randint
 shuffled_deck = []
 discard_deck = []
-card_remainder_limit = 50
+card_remainder_set = 50
+deck_number_set = 8
 
+
+# TODO : update hit to modify hand_value
 
 class Player:
     """A class representing a player in a blackjack game and their moves"""
@@ -21,15 +24,28 @@ class Player:
         self.bust = False
         self.stayed = False
 
-    def hit(self, deck, discard):
-        """deal card to player hand"""
-        deck_index = randint(0, len(deck)-1)
-        self.hand.append(deck[deck_index])
-        deck.pop(deck_index)
+    def lose_hand(self):
+        """lose wager to dealer and discard hand"""
+        pass
 
-    def discard(self, discard):
+    def win_hand(self):
+        """win wager from dealer and discard hand"""
+        pass
+
+    def push_hand(self):
+        """tie with dealer and discard hand"""
+        pass
+
+    def hit(self):
+        """deal card to player hand"""
+        deck_index = randint(0, len(shuffled_deck)-1)
+        self.hand.append(shuffled_deck[deck_index])
+        shuffled_deck.pop(deck_index)
+        # TODO : update hand value and bust value
+
+    def discard(self):
         """empty hand to discard pile"""
-        discard.append(self.hand.pop())
+        discard_deck.append(self.hand.pop())
 
     def stay(self):
         """pass turn to next player"""
@@ -63,7 +79,14 @@ class Player:
 
 
 class Dealer(Player):
-    pass
+    """class representing dealer in blackjack"""
+    def print_dealer(self):
+        """print dealer top card while leaving bottom card hidden"""
+        pass
+
+    def show_hand(self):
+        """print dealer hand"""
+        pass
       
 
 def shuffle_discard(shuffled_deck, discard_deck):
@@ -112,6 +135,7 @@ def play_game():
     player_list = []
     cash_input = ""
     dealer = Dealer(0)
+    player_move_input = ""
 
     # allow selection for number of players from 1 to 7
     print("Please select the number of players that would like to play (1-7): ")
@@ -120,6 +144,11 @@ def play_game():
         print("Please input a valid number of players: ")
         num_players = input()
     
+
+    # insert cards into shuffled_deck based on number of decks setting
+    for i in range(1, 14):
+        shuffled_deck += [i] * deck_number_set
+
     # initialize each Player instance with prompted initial cash value and add to player list
     for player_number in range(1, int(num_players)+1):
         print("Player {}, please input the amount of cash you would like to play with: ".format(player_number))
@@ -176,11 +205,54 @@ def play_game():
                 shuffle_discard(shuffled_deck, discard_deck)
             dealer.hit()
 
+        # show player hands and dealer's face up card
+        for player in player_list:
+            player.print_player()
+        dealer.print_dealer()
 
-        
-        # TODO: check for naturals
+        # if dealer has natural, show hand, and all players without blackjack lose
+        if dealer.hand_value == 21:
+            dealer.show_hand()
+            for player in player_list:
+                if player.hand_value == 21:
+                    player.push_hand()
+                else:
+                    player.lose_hand()
 
-        # TODO: Player Turns loop
+        # TODO: Add options for double down and split
+        # dealer does not have natural, players take turns
+        else:
+            i = 1
+            for player in player_list:
+                while not player.stayed and not player.bust:
+                    print("Player {}: ".format(i))
+                    player.print_player()
+                    print("Please select the option you would like to do: ")
+                    print("1. Hit")
+                    print("2. Stay")
+                    player_move_input = input()
+
+                    # input validation loop
+                    while player_move_input.strip().lower() not in ["1", "2", "h", "hit", "s", "stay"]:
+                        print("Please input valid selection: ")
+                        print("1. Hit")
+                        print("2. Stay")
+                        player_move_input = input()
+                    player_move_input = player_move_input.strip().lower()
+
+                    # hit
+                    if player_move_input in ["1", "h", "hit"]:
+                        if player.hand_value[0] < 21:
+                            player.print_player()
+                            player.hit()
+                        else:
+                            print("You may not hit. You must stay.")
+                            player.stay()
+
+                    # stay
+                    elif player_move_input in ["2", "s", "stay"]:
+                        print("You stayed.")
+                        player.stay()     
 
         # TODO: dealer turn
 
@@ -232,3 +304,5 @@ if __name__ == '__main__':
 # TODO: write change_settings function
 # TODO: write display_rules function
 # TODO: complete player Class methods
+# TODO: update printing and hitting and card dict to accomodate suit
+# TODO: print update message for player leaving game / don't allow player quits
