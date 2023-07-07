@@ -9,13 +9,11 @@ card_remainder_set = 50
 deck_number_set = 8
 
 
-# TODO : update hit to modify hand_value
-
 class Player:
     """A class representing a player in a blackjack game and their moves"""
     card_values = dict([(i, i) for i in range(1,11)] + [(11, 10), (12, 10), (13, 10)])
 
-    def __init__(self, input_cash = 100):
+    def __init__(self, name, input_cash = 100):
         self.hand = []
         self.play_cash = input_cash
         self.initial_cash = input_cash
@@ -23,6 +21,7 @@ class Player:
         self.hand_value = []
         self.bust = False
         self.stayed = False
+        self.name = name
 
     def lose_hand(self):
         """lose wager to dealer and discard hand"""
@@ -72,9 +71,11 @@ class Player:
         pass
 
     def print_player(self):
+        """print player cash, wager, and current hand to screen"""
         pass
 
     def set_wager(self, wager_amount):
+        """take input: wager_amount, set wager attribute to that value, and subtract from total cash"""
         pass
 
 
@@ -136,6 +137,8 @@ def play_game():
     cash_input = ""
     dealer = Dealer(0)
     player_move_input = ""
+    player_name_input = ""
+    player_quit_input = ""
 
     # allow selection for number of players from 1 to 7
     print("Please select the number of players that would like to play (1-7): ")
@@ -151,8 +154,8 @@ def play_game():
 
     # initialize each Player instance with prompted initial cash value and add to player list
     for player_number in range(1, int(num_players)+1):
-        print("Player {}, please input the amount of cash you would like to play with: ".format(player_number))
-        cash_input = input()
+        player_name_input = input("Player {}, please input your name: ".format(player_number))
+        cash_input = input("Player {}, please input the amount of cash you would like to play with: ".format(player_number))
         while not is_int(cash_input) or float(cash_input) < 1:
             if not is_float(cash_input):
                 print("\nPlease input a valid amount:")
@@ -162,7 +165,7 @@ def play_game():
                 print("\nWe only play with whole dollars, please keep your change.")
                 break
             cash_input = input()
-        player_list.append(Player(int(float(cash_input))))
+        player_list.append(Player(player_name_input, int(float(cash_input))))
 
     # show players and cash
     for player in player_list:
@@ -175,9 +178,8 @@ def play_game():
     while player_list != []:
        
         # wager prompt and validation loop
-        i = 1
         for player in player_list:
-            print("Player {}, please input the amount you would like to wager for the round: ".format(i))
+            print("{}, please input the amount you would like to wager for the round: ".format(player.name))
             wager_input = input()
             while not is_int(wager_input) or float(wager_input) < 1 or float(wager_input) > player.play_cash:
                 print("\Current cash: ", player.play_cash)
@@ -193,15 +195,14 @@ def play_game():
                 wager_input = input()
             player.set_wager(int(float(wager_input)))
             input("Press Enter to continue...")
-            i += 1
 
         # deal cards to players and dealer, shuffling if too few cards remain
         for i in range(2):
             for player in player_list:
-                if len(shuffled_deck) < card_remainder_limit:
+                if len(shuffled_deck) < card_remainder_set:
                     shuffle_discard(shuffled_deck, discard_deck)
                 player.hit()
-            if len(shuffled_deck) < card_remainder_limit:
+            if len(shuffled_deck) < card_remainder_set:
                 shuffle_discard(shuffled_deck, discard_deck)
             dealer.hit()
 
@@ -222,10 +223,9 @@ def play_game():
         # TODO: Add options for double down and split
         # dealer does not have natural, players take turns
         else:
-            i = 1
             for player in player_list:
                 while not player.stayed and not player.bust:
-                    print("Player {}: ".format(i))
+                    print("{}: ".format(player.name))
                     player.print_player()
                     print("Please select the option you would like to do: ")
                     print("1. Hit")
@@ -254,10 +254,50 @@ def play_game():
                         print("You stayed.")
                         player.stay()     
 
-        # TODO: dealer turn
+            # dealer turn
+            dealer.show_hand()
+            while dealer.hand_value < 17:
+                dealer.hit()
+                dealer.show_hand()
+                input("Press Enter to continue...")
 
-        # TODO: round resolution, quit offer, discard
+            # resolve player wagers after dealer turn
+            for player in player_list:
+                if dealer.bust:
+                    if player.bust:
+                        player.lose_wager()
+                    else:
+                        player.win_wager()
+                elif dealer.hand_value[0] == 21:
+                    if player.hand_value[0] == 21 and len(player.hand) == 2:
+                        player.win_wager()
+                    else:
+                        player.lose_wager()
+                else:
+                    if not player.bust and player.hand_value[0] > dealer.hand_value[0]:
+                        player.win_wager()
+                    elif not player.bust:
+                        player.lose_wager()
 
+            # print players after turn resolution
+            for player in player_list:
+                player.print_player()
+            
+            # exit player from game if cash is 0, prompt player if they would like to exit
+            i = 0
+            for player in player_list:
+                player.print_player()
+                if player.play_cash == 0:
+                    input("{}, you have run out of money, you must leave the table.".format(player.name))
+                    player_list.pop(i)
+                else:
+                    player_quit_input = input("{}, Press Enter to continue, or input '1' if you would like to quit...")
+                    if player_quit_input.strip() == "1":
+                        player_list.pop(i)
+                        input("Thank you for playing {}.\nPress Enter to continue...".format(player.name))
+                i += 1          
+
+            
         
 
 
@@ -301,8 +341,18 @@ if __name__ == '__main__':
     main()
 
 # TODO: write play_game function
-# TODO: write change_settings function
-# TODO: write display_rules function
 # TODO: complete player Class methods
+# TODO : remove player if cash drops to 0
+
+# TODO: write display_rules function
 # TODO: update printing and hitting and card dict to accomodate suit
+
+# TODO: write change_settings function
 # TODO: print update message for player leaving game / don't allow player quits
+
+
+
+# UPDATED: dealer turn
+# UPDATED: round resolution
+# UPDATED: add player names
+# UPDATED: add player quit option
