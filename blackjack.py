@@ -5,6 +5,7 @@ This script runs a simulation of a game of Blackjack
 from random import randint
 shuffled_deck = []
 discard_deck = []
+card_remainder_limit = 50
 
 
 class Player:
@@ -24,8 +25,11 @@ class Player:
         """deal card to player hand"""
         deck_index = randint(0, len(deck)-1)
         self.hand.append(deck[deck_index])
-        discard.append(deck[deck_index])
         deck.pop(deck_index)
+
+    def discard(self, discard):
+        """empty hand to discard pile"""
+        discard.append(self.hand.pop())
 
     def stay(self):
         """pass turn to next player"""
@@ -62,6 +66,11 @@ class Dealer(Player):
     pass
       
 
+def shuffle_discard(shuffled_deck, discard_deck):
+    """Shuffles the cards from the discard pile and puts them into the deck"""
+    pass
+
+
 def display_rules():
     """print the rules out to the screen"""
     pass
@@ -70,6 +79,12 @@ def display_rules():
 def change_settings():
     """enter menu for user to change game settings or return to home menu"""
     pass
+    # TODO: card remainder limit
+    # TODO: surrender
+    # TODO: Insurance
+    # TODO: Splitting
+    # TODO: payout level
+    # TODO: deck number (relate to card remainder limit)
 
 
 def is_float(string_value):
@@ -96,6 +111,7 @@ def play_game():
     num_players = ""
     player_list = []
     cash_input = ""
+    dealer = Dealer(0)
 
     # allow selection for number of players from 1 to 7
     print("Please select the number of players that would like to play (1-7): ")
@@ -150,10 +166,18 @@ def play_game():
             input("Press Enter to continue...")
             i += 1
 
-        # TODO: Deal hand
-          # dealer hand
-          # check end of deck/reshuffle
+        # deal cards to players and dealer, shuffling if too few cards remain
+        for i in range(2):
+            for player in player_list:
+                if len(shuffled_deck) < card_remainder_limit:
+                    shuffle_discard(shuffled_deck, discard_deck)
+                player.hit()
+            if len(shuffled_deck) < card_remainder_limit:
+                shuffle_discard(shuffled_deck, discard_deck)
+            dealer.hit()
 
+
+        
         # TODO: check for naturals
 
         # TODO: Player Turns loop
