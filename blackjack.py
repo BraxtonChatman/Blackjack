@@ -11,7 +11,7 @@ deck_number_set = 8
 
 class Player:
     """A class representing a player in a blackjack game and their moves"""
-    card_values = dict([(i, i) for i in range(1,11)] + [(11, 10), (12, 10), (13, 10)])
+    card_values = dict([(i, i) for i in range(2,11)] + [(11, 10), (12, 10), (13, 10), (1, 11)])
 
     def __init__(self, name, input_cash = 100):
         self.hand = []
@@ -37,10 +37,32 @@ class Player:
 
     def hit(self):
         """deal card to player hand"""
+        if len(shuffled_deck) < card_remainder_set:
+            shuffled_deck += discard_deck
+            discard_deck = []
+
+        # choose random card in shuffled_deck
         deck_index = randint(0, len(shuffled_deck)-1)
-        self.hand.append(shuffled_deck[deck_index])
+        new_card = shuffled_deck[deck_index]
         shuffled_deck.pop(deck_index)
-        # TODO : update hand value and bust value
+
+        # add new card to hand value list. append if new card is ace
+        for i in range(0, len(self.hand_value) - 1):
+            self.hand_value[i] += self.card_values[new_card]
+        if new_card == 1:
+            if i == 0:
+                self.hand_value.append(0)
+            self.hand_value[1] = self.hand_value[0] - 10
+        if len(self.hand_value) == 2 and self.hand_value[0] > 21:
+            self.hand_value.pop(0)
+
+        # add new card to hand
+        self.hand.append(new_card)
+
+        # lose hand if bust
+        if self.hand_value[0] > 21:
+            self.bust = True
+            self.lose_hand()
 
     def discard(self):
         """empty hand to discard pile"""
@@ -49,14 +71,6 @@ class Player:
     def stay(self):
         """pass turn to next player"""
         self.stayed = True
-
-    def is_bust(self):
-        """determine if player hand is a bust"""
-        pass
-
-    def get_total(self):
-        """calculate sum of hand factoring aces"""
-        hand_sum = sum(self.card_values[i] for i in self.hand)
 
     def split(self):
         """separate matching cards to multiple hands"""
@@ -68,14 +82,25 @@ class Player:
 
     def make_wager(self):
         """prompt user for wager_amount, validate, and set"""
-        pass
+        print(self.name, "please input the amount you would like to wager for the round: ")
+        wager_input = input()
+        while not is_int(wager_input) or float(wager_input) < 1 or float(wager_input) > self.play_cash:
+            print("\Current cash: ", self.play_cash)
+            if not is_float(wager_input):
+                print("Please input a valid wager amount: ", end = "")
+            elif float(wager_input) < 1:
+                print("That's not how we do wagers here, you must wager at least a dollar: ", end = "")
+            elif float(wager_input) > self.play_cash:
+                print("You may not wager more than you have, please make a new wager: ", end = "")
+            else:
+                print("Your wager has been rounded down to the nearest dollar.\n")
+                break
+            wager_input = input()
+        self.wager_amount = int(float(wager_input))
+        input("Press Enter to continue...")
 
     def print_player(self):
         """print player cash, wager, and current hand to screen"""
-        pass
-
-    def set_wager(self, wager_amount):
-        """take input: wager_amount, set wager attribute to that value, and subtract from total cash"""
         pass
 
 
@@ -89,11 +114,6 @@ class Dealer(Player):
         """print dealer hand"""
         pass
       
-
-def shuffle_discard(shuffled_deck, discard_deck):
-    """Shuffles the cards from the discard pile and puts them into the deck"""
-    pass
-
 
 def display_rules():
     """print the rules out to the screen"""
@@ -132,13 +152,16 @@ def is_int(string_value):
 
 def play_game():
     """play blackjack simulation"""
+    dealer = Dealer(0)
     num_players = ""
     player_list = []
+    player_quit_list = []
     cash_input = ""
-    dealer = Dealer(0)
     player_move_input = ""
     player_name_input = ""
     player_quit_input = ""
+    wager_input = ""
+
 
     # allow selection for number of players from 1 to 7
     print("Please select the number of players that would like to play (1-7): ")
@@ -146,13 +169,12 @@ def play_game():
     while num_players.strip() not in ['1', '2', '3', '4', '5', '6', '7']:
         print("Please input a valid number of players: ")
         num_players = input()
-    
 
     # insert cards into shuffled_deck based on number of decks setting
     for i in range(1, 14):
         shuffled_deck += [i] * deck_number_set
 
-    # initialize each Player instance with prompted initial cash value and add to player list
+    # initialize each Player instance with prompted initial cash value and name into player list
     for player_number in range(1, int(num_players)+1):
         player_name_input = input("Player {}, please input your name: ".format(player_number))
         cash_input = input("Player {}, please input the amount of cash you would like to play with: ".format(player_number))
@@ -174,11 +196,12 @@ def play_game():
     input()
 
     # game loops while there are any players
-    wager_input = ""
     while player_list != []:
        
         # wager prompt and validation loop
         for player in player_list:
+            player.make_wager()
+
             print("{}, please input the amount you would like to wager for the round: ".format(player.name))
             wager_input = input()
             while not is_int(wager_input) or float(wager_input) < 1 or float(wager_input) > player.play_cash:
@@ -199,11 +222,7 @@ def play_game():
         # deal cards to players and dealer, shuffling if too few cards remain
         for i in range(2):
             for player in player_list:
-                if len(shuffled_deck) < card_remainder_set:
-                    shuffle_discard(shuffled_deck, discard_deck)
                 player.hit()
-            if len(shuffled_deck) < card_remainder_set:
-                shuffle_discard(shuffled_deck, discard_deck)
             dealer.hit()
 
         # show player hands and dealer's face up card
@@ -220,7 +239,6 @@ def play_game():
                 else:
                     player.lose_hand()
 
-        # TODO: Add options for double down and split
         # dealer does not have natural, players take turns
         else:
             for player in player_list:
@@ -253,53 +271,53 @@ def play_game():
                     elif player_move_input in ["2", "s", "stay"]:
                         print("You stayed.")
                         player.stay()     
+                for player in player_list:
+                    player.stayed = False
 
             # dealer turn
             dealer.show_hand()
             while dealer.hand_value < 17:
                 dealer.hit()
                 dealer.show_hand()
-                input("Press Enter to continue...")
+            input("Press Enter to continue...")
 
             # resolve player wagers after dealer turn
             for player in player_list:
-                if dealer.bust:
-                    if player.bust:
-                        player.lose_wager()
+                # dealer busts
+                if dealer.bust and not player.bust:
+                    player.win_hand()
+                
+                # dealer doesn't bust
+                elif not player.bust:
+                    if player.hand_value[0] > dealer.hand_value[0]:
+                        player.win_hand()
+                    elif player.hand_value[0] == dealer.hand_value[0]:
+                        player.push_hand()
                     else:
-                        player.win_wager()
-                elif dealer.hand_value[0] == 21:
-                    if player.hand_value[0] == 21 and len(player.hand) == 2:
-                        player.win_wager()
-                    else:
-                        player.lose_wager()
-                else:
-                    if not player.bust and player.hand_value[0] > dealer.hand_value[0]:
-                        player.win_wager()
-                    elif not player.bust:
-                        player.lose_wager()
+                        player.lose_hand()
 
-            # print players after turn resolution
+            # reset player bust
             for player in player_list:
-                player.print_player()
-            
-            # exit player from game if cash is 0, prompt player if they would like to exit
-            i = 0
-            for player in player_list:
-                player.print_player()
-                if player.play_cash == 0:
-                    input("{}, you have run out of money, you must leave the table.".format(player.name))
-                    player_list.pop(i)
-                else:
-                    player_quit_input = input("{}, Press Enter to continue, or input '1' if you would like to quit...")
-                    if player_quit_input.strip() == "1":
-                        player_list.pop(i)
-                        input("Thank you for playing {}.\nPress Enter to continue...".format(player.name))
-                i += 1          
+                player.bust = False
 
-            
-        
+        # print players after turn resolution
+        for player in player_list:
+            player.print_player()
 
+        # exit player from game if cash is 0, prompt player if they would like to exit
+        for i in range(0, len(player_list)-1):
+            player_list[i].print_player()
+            if player_list[i].play_cash == 0:
+                input("{}, you have run out of money, you must leave the table.".format(player_list[i].name))
+                player_quit_list.append(i)
+            else:
+                player_quit_input = input("{}, Press Enter to continue, or input '1' if you would like to quit...".format(player_list[i].name))
+                if player_quit_input.strip().lower() in ["1", "q", "quit", "exit", "leave", "done"]:
+                    player_quit_list.append(i)
+                    input("Thank you for playing {}.\nPress Enter to continue...".format(player_list[i].name))
+        for i in player_quit_list.reverse():
+            player_list.pop(i)   
+        player_quit_list = []
 
 
 def main():  
@@ -340,19 +358,21 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO: write play_game function
+
+
 # TODO: complete player Class methods
-# TODO : remove player if cash drops to 0
+# TODO : move deck limit check to hit
+# TODO: discard hands in lose, win, push
+
+
 
 # TODO: write display_rules function
-# TODO: update printing and hitting and card dict to accomodate suit
-
 # TODO: write change_settings function
-# TODO: print update message for player leaving game / don't allow player quits
+# TODO: update printing and hitting and card dict to accomodate suit
+# TODO: Add options for double down and split
 
-
-
-# UPDATED: dealer turn
-# UPDATED: round resolution
-# UPDATED: add player names
-# UPDATED: add player quit option
+# UPDATE: fix quit option
+# UPDATE: edit player hit method to check the deck card remainder limit
+# UPDATE: player hit calls lose _hand mrthod if a bust occurs
+# UPDATE: player.hit updates hand and bust value
+# UPDATE: removed unneseccary Player methods
