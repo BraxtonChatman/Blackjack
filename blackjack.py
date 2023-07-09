@@ -7,6 +7,7 @@ shuffled_deck = []
 discard_deck = []
 card_remainder_set = 50
 deck_number_set = 8
+payout_rate_set = 1.5
 
 
 class Player:
@@ -23,17 +24,24 @@ class Player:
         self.stayed = False
         self.name = name
 
-    def lose_hand(self):
-        """lose wager to dealer and discard hand"""
-        pass
-
-    def win_hand(self):
-        """win wager from dealer and discard hand"""
-        pass
-
-    def push_hand(self):
-        """tie with dealer and discard hand"""
-        pass
+    def make_wager(self):
+        """prompt user for wager_amount, validate, and set"""
+        print(self.name, "please input the amount you would like to wager for the round: ")
+        wager_input = input()
+        while not is_int(wager_input) or float(wager_input) < 1 or float(wager_input) > self.play_cash:
+            print("\Current cash: ", self.play_cash)
+            if not is_float(wager_input):
+                print("Please input a valid wager amount: ", end = "")
+            elif float(wager_input) < 1:
+                print("That's not how we do wagers here, you must wager at least a dollar: ", end = "")
+            elif float(wager_input) > self.play_cash:
+                print("You may not wager more than you have, please make a new wager: ", end = "")
+            else:
+                print("Your wager has been rounded down to the nearest dollar.\n")
+                break
+            wager_input = input()
+        self.wager_amount = int(float(wager_input))
+        input("Press Enter to continue...")
 
     def hit(self):
         """deal card to player hand"""
@@ -64,10 +72,6 @@ class Player:
             self.bust = True
             self.lose_hand()
 
-    def discard(self):
-        """empty hand to discard pile"""
-        discard_deck.append(self.hand.pop())
-
     def stay(self):
         """pass turn to next player"""
         self.stayed = True
@@ -80,39 +84,52 @@ class Player:
         """validate play_cash for double wager_amount and receive one more card"""
         pass
 
-    def make_wager(self):
-        """prompt user for wager_amount, validate, and set"""
-        print(self.name, "please input the amount you would like to wager for the round: ")
-        wager_input = input()
-        while not is_int(wager_input) or float(wager_input) < 1 or float(wager_input) > self.play_cash:
-            print("\Current cash: ", self.play_cash)
-            if not is_float(wager_input):
-                print("Please input a valid wager amount: ", end = "")
-            elif float(wager_input) < 1:
-                print("That's not how we do wagers here, you must wager at least a dollar: ", end = "")
-            elif float(wager_input) > self.play_cash:
-                print("You may not wager more than you have, please make a new wager: ", end = "")
-            else:
-                print("Your wager has been rounded down to the nearest dollar.\n")
-                break
-            wager_input = input()
-        self.wager_amount = int(float(wager_input))
-        input("Press Enter to continue...")
+    def win_hand(self):
+        """win wager from dealer and discard hand"""
+        self.play_cash += self.wager_amount
+        self.play_cash += self.wager_amount * payout_rate_set
+        self.wager_amount = 0
+        self.discard()
+
+    def lose_hand(self):
+        """lose wager to dealer and discard hand"""
+        self.wager_amount = 0
+        self.discard()
+
+    def push_hand(self):
+        """tie with dealer and discard hand"""
+        self.play_cash += self.wager_amount
+        self.wager_amount = 0
+        self.discard()
+
+    def discard(self):
+        """empty hand to discard pile"""
+        discard_deck += self.hand
+        self.hand = []
+        self.hand_value = []
 
     def print_player(self):
         """print player cash, wager, and current hand to screen"""
-        pass
+        print(self.name)
+        print("Cash:  ", self.play_cash)
+        print("Wager: ", self.wager_amount)
+        print("Hand: ")
+        for i in self.hand:
+            print(self.card_values[i], end = "  ")
 
 
 class Dealer(Player):
     """class representing dealer in blackjack"""
     def print_dealer(self):
         """print dealer top card while leaving bottom card hidden"""
-        pass
+        print("Dealer Card: \n", self.hand[0])
+        
 
     def show_hand(self):
         """print dealer hand"""
-        pass
+        print("Dealer Hand: ")
+        for i in self.hand:
+            print(self.card_values[i], end="  ")
       
 
 def display_rules():
@@ -359,20 +376,14 @@ if __name__ == '__main__':
     main()
 
 
-
-# TODO: complete player Class methods
-# TODO : move deck limit check to hit
-# TODO: discard hands in lose, win, push
-
-
-
 # TODO: write display_rules function
-# TODO: write change_settings function
 # TODO: update printing and hitting and card dict to accomodate suit
-# TODO: Add options for double down and split
 
-# UPDATE: fix quit option
-# UPDATE: edit player hit method to check the deck card remainder limit
-# UPDATE: player hit calls lose _hand mrthod if a bust occurs
-# UPDATE: player.hit updates hand and bust value
-# UPDATE: removed unneseccary Player methods
+# TODO: write change_settings function
+# TODO: Add options for double down and split
+# TODO: payout rate changes in win for blackjack vs not
+
+
+# UPDATE: write win, lose, push, and fix discard methods
+# UPDATE: write print player method
+# UPDATE: write dealer print methods
