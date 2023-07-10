@@ -64,7 +64,7 @@ class Player:
                 if self.hand_value[0] < 21:
                     self.hit()
                 else:
-                    print("You may not hit. You must stay.")
+                    print("You have 21. You may not hit. You must stay.")
                     self.stay()
 
             # stay
@@ -77,6 +77,8 @@ class Player:
         """deal card to player hand"""
         global shuffled_deck
         global discard_deck
+
+        # shuffle discard into deck if too few cards remain
         if len(shuffled_deck) < card_remainder_set:
             shuffled_deck += discard_deck
             discard_deck = []
@@ -85,6 +87,10 @@ class Player:
         deck_index = randint(0, len(shuffled_deck)-1)
         new_card = shuffled_deck[deck_index]
         shuffled_deck.pop(deck_index)
+
+        print("#"*100)
+        print("new card is:", new_card)
+        print("#"*100)
 
         # add new card to hand value. append if new card is ace
         for i in range(0, len(self.hand_value)):
@@ -99,16 +105,17 @@ class Player:
         # add new card to hand
         if self.hand[0] == 0:
             self.hand.pop(0)
-        self.hand.append(new_card)
+        self.hand.append(self.card_values[new_card])
 
         # lose hand if bust
         if self.hand_value[0] > 21:
             self.bust = True
             if self.play_cash != -1:
-                print("\nYou busted.\n")
-                self.lose_hand()
+                print("\nYou busted.")
+                self.print_player()
+                self.hand_resolution(-1)
             else:
-                print("\nDealer Busted\n")
+                print("\nDealer Busted")
 
     def stay(self):
         """pass turn to next player"""
@@ -122,26 +129,28 @@ class Player:
         """validate play_cash for double wager_amount and receive one more card"""
         pass
 
-    def win_hand(self):
-        """win wager from dealer and discard hand"""
-        self.play_cash += self.wager_amount
-        self.play_cash += self.wager_amount * payout_rate_set
-        self.wager_amount = 0
-        self.discard()
-        print("{}, you won!\n".format(self.name))
-
-    def lose_hand(self):
-        """lose wager to dealer and discard hand"""
-        self.wager_amount = 0
-        self.discard()
-        print("{}, you lost.\n".format(self.name))
-
-    def push_hand(self):
-        """tie with dealer and discard hand"""
-        self.play_cash += self.wager_amount
-        self.wager_amount = 0
-        self.discard()
-        print("{}, you tied.\n".format(self.name))
+    def hand_resolution(self, outcome):
+        """resolve wager with dealer and discard hand"""
+        # win hand
+        if outcome == 1:
+            self.play_cash += self.wager_amount
+            self.play_cash += self.wager_amount * payout_rate_set
+            self.wager_amount = 0
+            self.discard()
+            print("\n{}, You won!\n". format(self.name))
+        
+        # tie hand
+        elif outcome == 0:
+            self.play_cash += self.wager_amount
+            self.wager_amount = 0
+            self.discard()
+            print("\n{}, You tied.\n".format(self.name))
+        
+        # lose hand
+        elif outcome == -1:
+            self.wager_amount = 0
+            self.discard()
+            print("\n{}, You lost.\n".format(self.name))
 
     def discard(self):
         """empty hand to discard pile"""
@@ -171,9 +180,7 @@ class Dealer(Player):
         """print dealer top card while leaving bottom card hidden"""
         print("\n\nDealer")
         print("~" * 12)
-        print("Top Card: {}\n".format(self.card_values[self.hand[0]]))
-        input("Press Enter to continue...")
-
+        print("Top Card: {}".format(self.card_values[self.hand[0]]))
         
     def show_hand(self):
         """print dealer hand"""
@@ -281,47 +288,62 @@ def play_game():
         for player in player_list:
             player.print_player()
         dealer.print_dealer()
+        input("\nPress Enter to continue...")
         print("-" * 70)
 
         # if dealer has natural, show hand, and all players without blackjack lose
-        if dealer.hand_value == 21:
-            print("Dealer has 21\n")
+        if dealer.hand_value[0] == 21:
+            print("Dealer has Blackjack\n")
             dealer.show_hand()
             for player in player_list:
-                if player.hand_value == 21:
-                    player.push_hand()
+                if player.hand_value[0] == 21:
+                    player.hand_resolution(0)
                 else:
-                    player.lose_hand()
+                    player.hand_resolution(-1)
 
-        # dealer does not have natural, players take turns
+        # dealer does not have natural
         else:
+            # players take turns
             for player in player_list:
-                player.prompt_move() 
+                dealer.print_dealer()
+                if player.hand_value[0] == 21:
+                    print("You have a Blackjack\n")
+                    player.hand_resolution(1)
+                    player.bust = True
+                else:
+                    player.prompt_move() 
                 print("-" * 70)   
              
-            # dealer turn
-            dealer.show_hand()
-            while dealer.hand_value[0] < 17 and not dealer.bust:
-                dealer.hit()
+            # dealer turn only if some players don't bust
+            all_bust = True
+            for player in player_list:
+                all_bust = all_bust and player.bust
+            if not all_bust:
                 dealer.show_hand()
+                while dealer.hand_value[0] < 17 and not dealer.bust:
+                    dealer.hit()
+                    dealer.show_hand()
             input("\nPress Enter to continue...")
-            print()
+            print("-" * 70)
 
             # resolve player wagers after dealer turn
             for player in player_list:
                 if dealer.bust and not player.bust:
-                    player.win_hand()
+                    player.hand_resolution(1)
                 elif not player.bust:
                     if player.hand_value[0] > dealer.hand_value[0]:
-                        player.win_hand()
+                        player.hand_resolution(1)
                     elif player.hand_value[0] == dealer.hand_value[0]:
-                        player.push_hand()
+                        player.hand_resolution(0)
                     else:
-                        player.lose_hand()
+                        player.hand_resolution(-1)
+            print("-" * 70)
 
-            # reset player bust
+            # reset player bust and dealer hand
             for player in player_list:
                 player.bust = False
+            dealer.bust = False
+            dealer.discard()
 
         # print players after turn resolution
         for player in player_list:
@@ -337,11 +359,13 @@ def play_game():
                 player_quit_input = input("{}, Press Enter to continue,\nor input '1' if you would like to quit... ".format(player_list[i].name))
                 if player_quit_input.strip().lower() in ["1", "q", "quit", "exit", "leave", "done"]:
                     player_quit_list.append(i)
-                    input("\nThank you for playing {}, goodbye.\n".format(player_list[i].name))
-        if player_quit_list != []:
-            for i in player_quit_list.reverse():
+                    input("\nThank you for playing {}, goodbye.".format(player_list[i].name))
+        if player_quit_list:
+            player_quit_list.reverse()
+            for i in player_quit_list:
                 player_list.pop(i)   
         player_quit_list = []
+        print("-" * 70)
 
 
 def main():  
@@ -387,7 +411,9 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO: add messages to win, lose, push
+
+# TODO: dealer doesn't take turn if all players bust
+
 # TODO: write display_rules function
 # TODO: update printing and hitting and card dict to accomodate suit
 
@@ -396,5 +422,7 @@ if __name__ == '__main__':
 # TODO: payout rate changes in win for blackjack vs not
 
 
-#UP: menu layout in main
-#UP: player print function
+#UP: fix quit bug
+#UP: reset dealer bust value and hand after round
+#UP: replace win_hand, lose_hand, push_hand, with hand_resolution method
+#UP: dealer only takes turn if some players don't bust
