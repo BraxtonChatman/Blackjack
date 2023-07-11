@@ -3,7 +3,7 @@
 This script runs a simulation of a game of Blackjack
 """
 from random import randint
-card_remainder_set = 50
+card_remainder_set = 400
 deck_number_set = 8
 payout_rate_set = 1.5
 shuffled_deck = []
@@ -12,6 +12,7 @@ discard_deck = []
 class Player:
     """A class representing a player in a blackjack game and their moves"""
     card_values = dict([(i, i) for i in range(2,11)] + [(11, 10), (12, 10), (13, 10), (1, 11), (0, 0)])
+    card_faces = dict([(i, "{}".format(i)) for i in range(2, 11)] + [(11, "J"), (12, "Q"), (13, "K"), (1, "A")])
 
     def __init__(self, name, input_cash = 100):
         self.hand = [0]
@@ -46,7 +47,7 @@ class Player:
         """prompt user for the move they would like to make on their turn"""
         while not self.stayed and not self.bust:
             self.print_player()
-            print("\nPlease select the option you would like to do: ")
+            print("\nPlease select your action: ")
             print("1. Hit")
             print("2. Stay")
             player_move_input = input()
@@ -64,12 +65,12 @@ class Player:
                 if self.hand_value[0] < 21:
                     self.hit()
                 else:
-                    print("You have 21. You may not hit. You must stay.")
+                    input("You have 21. You may not hit. You must stay.")
                     self.stay()
 
             # stay
             elif player_move_input in ["2", "s", "stay"]:
-                print("\nYou stayed.\n")
+                input("\nYou stayed.\n")
                 self.stay()
         self.stayed = False 
 
@@ -101,17 +102,15 @@ class Player:
         # add new card to hand
         if self.hand[0] == 0:
             self.hand.pop(0)
-        self.hand.append(self.card_values[new_card])
+        self.hand.append(new_card)
 
         # lose hand if bust
         if self.hand_value[0] > 21:
             self.bust = True
             if self.play_cash != -1:
-                print("\nYou busted.")
+                input("\nYou busted.")
                 self.print_player()
                 self.hand_resolution(-1)
-            else:
-                print("\nDealer Busted")
 
     def stay(self):
         """pass turn to next player"""
@@ -128,25 +127,25 @@ class Player:
     def hand_resolution(self, outcome):
         """resolve wager with dealer and discard hand"""
         # win hand
+        global payout_rate_set
         if outcome == 1:
-            self.play_cash += self.wager_amount
             self.play_cash += self.wager_amount * payout_rate_set
             self.wager_amount = 0
             self.discard()
-            print("\n{}, You won!\n". format(self.name))
+            print("\n{} won!\n". format(self.name))
         
         # tie hand
         elif outcome == 0:
             self.play_cash += self.wager_amount
             self.wager_amount = 0
             self.discard()
-            print("\n{}, You tied.\n".format(self.name))
+            print("\n{} tied.\n".format(self.name))
         
         # lose hand
         elif outcome == -1:
             self.wager_amount = 0
             self.discard()
-            print("\n{}, You lost.\n".format(self.name))
+            print("\n{} lost.\n".format(self.name))
 
     def discard(self):
         """empty hand to discard pile"""
@@ -157,16 +156,16 @@ class Player:
 
     def print_player(self):
         """print player cash, wager, and current hand to screen"""
-        print("\n")
+        print()
         print(self.name)
-        print("~" * 12)
+        print("~" * 20)
         print("Cash:  ", self.play_cash)
         print("Wager: ", self.wager_amount)
         print("Hand: ", end = " ")
         if self.hand[0] != 0:
-            print(self.hand[0], end = "")
+            print(self.card_faces[self.hand[0]], end = "")
             for i in self.hand[1:]:
-                print(", ", i, end = "")
+                print(", ", self.card_faces[i], end = "")
         print("\nValue: ", self.hand_value[0])
 
 
@@ -174,18 +173,20 @@ class Dealer(Player):
     """class representing dealer in blackjack"""
     def print_dealer(self):
         """print dealer top card while leaving bottom card hidden"""
-        print("\n\nDealer")
-        print("~" * 12)
-        print("Top Card: {}".format(self.hand[0]))
+        print()
+        print("Dealer")
+        print("~" * 20)
+        print("Top Card: {}".format(self.card_faces[self.hand[0]]))
         
     def show_hand(self):
         """print dealer hand"""
-        print("\n\nDealer")
-        print("~" * 12)
+        print()
+        print("Dealer")
+        print("~" * 20)
         print("Hand: ", end = " ")
-        print(self.hand[0], end = "")
+        print(self.card_faces[self.hand[0]], end = "")
         for i in self.hand[1:]:
-            print(", ", i, end="")
+            print(", ", self.card_faces[i], end="")
         print("\nValue: ", self.hand_value[0])
       
 
@@ -235,8 +236,11 @@ def play_game():
     player_quit_input = ""
     global shuffled_deck
     global discard_deck
+    global deck_number_set
 
     # insert cards into shuffled_deck based on number of decks setting
+    shuffled_deck = []
+    discard_deck = []
     for i in range(1, 14):
         shuffled_deck += [i] * 4 * deck_number_set
 
@@ -246,6 +250,7 @@ def play_game():
                                               'one', 'two', 'three', 'four', 'five',
                                               'six', 'seven']:
         num_players = input("Please input a valid number of players: ")
+    print()
 
     # initialize each Player instance with prompted initial cash value and name into player list
     for player_number in range(1, int(num_players)+1):
@@ -260,17 +265,22 @@ def play_game():
                 print("We only play with whole dollars, please keep your change.")
                 break
             cash_input = input()
+        print()
         player_list.append(Player(player_name_input, int(float(cash_input))))
+    print("-" * 70)
+    print()
 
     # show players and cash
     for player in player_list:
         player.print_player()
-    input("\nPress Enter to continue...")
+        print()
+    input("Press Enter to continue...")
     print("-" * 70)
 
     # game loops while there are any players
     while player_list != []:
         for player in player_list:
+            print()
             player.make_wager()
 
         # deal cards to players and dealer, shuffling if too few cards remain
@@ -279,17 +289,25 @@ def play_game():
                 player.hit()
             dealer.hit()
         print("-" * 70)
+        print()
 
         # show player hands and dealer's face up card
         for player in player_list:
             player.print_player()
+            if player.hand_value[0] == 21:
+                print("You have a Blackjack!")
         dealer.print_dealer()
         input("\nPress Enter to continue...")
         print("-" * 70)
 
-        # if dealer has natural, show hand, and all players without blackjack lose
+        # dealer checks for natural
+        if dealer.hand[0] in [10, 11, 12, 13, 1]:
+            print("\nDealer checks hole card for a Blackjack")
+            input()
+            if dealer.hand_value[0] != 21:
+                print("Dealer does not have a Blackjack\n")
         if dealer.hand_value[0] == 21:
-            print("Dealer has Blackjack\n")
+            input("Dealer has a Blackjack\n")
             dealer.show_hand()
             for player in player_list:
                 if player.hand_value[0] == 21:
@@ -303,7 +321,6 @@ def play_game():
             for player in player_list:
                 dealer.print_dealer()
                 if player.hand_value[0] == 21:
-                    print("You have a Blackjack\n")
                     player.hand_resolution(1)
                     player.bust = True
                 else:
@@ -319,8 +336,10 @@ def play_game():
                 while dealer.hand_value[0] < 17 and not dealer.bust:
                     dealer.hit()
                     dealer.show_hand()
-            input("\nPress Enter to continue...")
-            print("-" * 70)
+                if dealer.bust:
+                    print("\nThe Dealer busted.")
+                input("\nPress Enter to continue...")
+                print("-" * 70)
 
             # resolve player wagers after dealer turn
             for player in player_list:
@@ -333,6 +352,7 @@ def play_game():
                         player.hand_resolution(0)
                     else:
                         player.hand_resolution(-1)
+            input("\nPress Enter to continue...")
             print("-" * 70)
 
             # reset player bust and dealer hand
@@ -344,18 +364,19 @@ def play_game():
         # print players after turn resolution
         for player in player_list:
             player.print_player()
+        print("-" * 70)
 
         # exit player from game if cash is 0, prompt player if they would like to exit
         for i in range(0, len(player_list)):
             player_list[i].print_player()
-            if player_list[i].play_cash == 0:
-                input("{}, you have run out of money, you must leave the table.".format(player_list[i].name))
+            if player_list[i].play_cash < 1:
+                input("\n{}, you have run out of money, you must leave the table.\n".format(player_list[i].name))
                 player_quit_list.append(i)
             else:
-                player_quit_input = input("{}, Press Enter to continue,\nor input 'quit' if you would like to quit... ".format(player_list[i].name))
+                player_quit_input = input("\n{}, Press Enter to continue,\nor input 'quit' if you would like to quit... \n".format(player_list[i].name))
                 if player_quit_input.strip().lower() in ["q", "quit", "exit", "leave", "done"]:
                     player_quit_list.append(i)
-                    input("\nThank you for playing {}, goodbye.".format(player_list[i].name))
+                    input("Thank you for playing {}, goodbye.".format(player_list[i].name))
         if player_quit_list:
             player_quit_list.reverse()
             for i in player_quit_list:
@@ -408,13 +429,12 @@ if __name__ == '__main__':
     main()
 
 
-# TODO: dealer doesn't take turn if all players bust
-
 # TODO: write display_rules function
 # TODO: update printing and hitting and card dict to accomodate suit
-
 # TODO: write change_settings function
 # TODO: Add options for double down and split
 # TODO: payout rate changes in win for blackjack vs not
 
-# UP: fix hand printing bug
+
+# UP: hit adds fixed to add "J", "Q", "K", "A" to hand
+# UP: fix bug shuffling strings into deck
