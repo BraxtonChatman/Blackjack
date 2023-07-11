@@ -88,10 +88,6 @@ class Player:
         new_card = shuffled_deck[deck_index]
         shuffled_deck.pop(deck_index)
 
-        print("#"*100)
-        print("new card is:", new_card)
-        print("#"*100)
-
         # add new card to hand value. append if new card is ace
         for i in range(0, len(self.hand_value)):
             self.hand_value[i] += self.card_values[new_card]
@@ -168,9 +164,9 @@ class Player:
         print("Wager: ", self.wager_amount)
         print("Hand: ", end = " ")
         if self.hand[0] != 0:
-            print(self.card_values[self.hand[0]], end = "")
+            print(self.hand[0], end = "")
             for i in self.hand[1:]:
-                print(", ", self.card_values[i], end = "")
+                print(", ", i, end = "")
         print("\nValue: ", self.hand_value[0])
 
 
@@ -180,7 +176,7 @@ class Dealer(Player):
         """print dealer top card while leaving bottom card hidden"""
         print("\n\nDealer")
         print("~" * 12)
-        print("Top Card: {}".format(self.card_values[self.hand[0]]))
+        print("Top Card: {}".format(self.hand[0]))
         
     def show_hand(self):
         """print dealer hand"""
@@ -189,7 +185,7 @@ class Dealer(Player):
         print("Hand: ", end = " ")
         print(self.hand[0], end = "")
         for i in self.hand[1:]:
-            print(", ", self.card_values[i], end="")
+            print(", ", i, end="")
         print("\nValue: ", self.hand_value[0])
       
 
@@ -356,8 +352,8 @@ def play_game():
                 input("{}, you have run out of money, you must leave the table.".format(player_list[i].name))
                 player_quit_list.append(i)
             else:
-                player_quit_input = input("{}, Press Enter to continue,\nor input '1' if you would like to quit... ".format(player_list[i].name))
-                if player_quit_input.strip().lower() in ["1", "q", "quit", "exit", "leave", "done"]:
+                player_quit_input = input("{}, Press Enter to continue,\nor input 'quit' if you would like to quit... ".format(player_list[i].name))
+                if player_quit_input.strip().lower() in ["q", "quit", "exit", "leave", "done"]:
                     player_quit_list.append(i)
                     input("\nThank you for playing {}, goodbye.".format(player_list[i].name))
         if player_quit_list:
@@ -421,8 +417,4 @@ if __name__ == '__main__':
 # TODO: Add options for double down and split
 # TODO: payout rate changes in win for blackjack vs not
 
-
-#UP: fix quit bug
-#UP: reset dealer bust value and hand after round
-#UP: replace win_hand, lose_hand, push_hand, with hand_resolution method
-#UP: dealer only takes turn if some players don't bust
+# UP: fix hand printing bug
