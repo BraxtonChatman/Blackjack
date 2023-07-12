@@ -3,6 +3,8 @@
 This script runs a simulation of a game of Blackjack
 """
 from random import randint
+from textwrap import fill
+
 card_remainder_set = 52
 deck_number_set = 8
 payout_rate_set = 1.5
@@ -116,20 +118,11 @@ class Player:
         """pass turn to next player"""
         self.stayed = True
 
-    def split(self):
-        """separate matching cards to multiple hands"""
-        pass
-
-    def double_down(self):
-        """validate play_cash for double wager_amount and receive one more card"""
-        pass
-
     def hand_resolution(self, outcome):
         """resolve wager with dealer and discard hand"""
         # win hand
-        global payout_rate_set
         if outcome == 1:
-            self.play_cash += self.wager_amount * payout_rate_set
+            self.play_cash += self.wager_amount * 2
             self.wager_amount = 0
             self.discard()
             print("\n{} won!\n". format(self.name))
@@ -188,11 +181,33 @@ class Dealer(Player):
         for i in self.hand[1:]:
             print(", ", self.card_faces[i], end="")
         print("\nValue: ", self.hand_value[0])
-      
 
+      
 def display_rules():
     """print the rules out to the screen"""
-    pass
+    print("\n", "Welcome to Blackjack!".center(70),"\n")
+    string1 = ("This is a basic card game where all players make a bet, then are dealt two cards each"
+               " (including the dealer), and then in clockwise order each player plays by hitting"
+               " (receiving another card) or standing (keeping the current cards) with the goal of having"
+               " a hand total closer than the dealer's to 21. A player may hit as many times in a round"
+               " as they would like without going over 21; this is called a bust. Once all players have"
+               " gone, it is the dealer's turn. The dealer hits until their hand totals at least 17."
+               " Players whose hands total higher than the dealer's without going over 21 win the round,"
+               " players whose hand total equaled the dealer's tie, and players whose hand total was "
+               " lower than the dealer or over 21 lose.")
+
+    print(fill(string1))
+    
+    print(("\nFor more in depth rules, visit:\n"
+           "    \"https://bicyclecards.com/how-to-play/blackjack/\"\n"))
+    
+    print(("\nNotes about this program:\n"
+          "    -You may change the number of decks used in settings\n"
+          "    -You may change the reshuffle limit in settings\n"
+          "    -Splitting and Doubling down are not included\n"
+          "    -Insurance and Surrender are not included"))
+    
+    input()
 
 
 def change_settings():
@@ -208,11 +223,11 @@ def change_settings():
         print("-" * 70)
         print("Settings:\n")
         print("Decks:", deck_number_set)
-        print("Payout Rate:", payout_rate_set)
+        print("Blackjack Payout Rate:", payout_rate_set)
         print("Card Remainder:", card_remainder_set)
         print()
         print("1. Number of Decks")
-        print("2. Payout Rate")
+        print("2. Blackjack Payout Rate")
         print("3. Card Remainder Before Shuffle")
         print("4. Restore to default")
         print("5. Return to Main Menu")
@@ -231,7 +246,7 @@ def change_settings():
 
         # Payout Rate
         elif setting_selection == "2":
-            print("\nSelect the Payout Rate you would like to play with\n1.  3/2\n2.  6/5")
+            print("\nSelect the Blackjack Payout Rate you would like to play with\n1.  3/2\n2.  6/5")
             setting_input =  input()
             while setting_input not in ["1", "2"]:
                 setting_input = input("\nYou must select either\n1.  3/2\n2.  6/5\n")
@@ -264,7 +279,6 @@ def change_settings():
                 input("Settings have been reset.")
                 
         setting_input = ""
-
 
 
 def is_float(string_value):
@@ -382,6 +396,7 @@ def play_game():
             for player in player_list:
                 dealer.print_dealer()
                 if player.hand_value[0] == 21:
+                    player.play_cash += player.wager_amount * (payout_rate_set - 1)
                     player.hand_resolution(1)
                     player.bust = True
                 else:
@@ -490,12 +505,5 @@ if __name__ == '__main__':
     main()
 
 
-# TODO: write display_rules function
-# TODO: update printing and hitting and card dict to accomodate suit
-# TODO: Add options for double down and split
-# TODO: different payout for win vs blackjack
-# TODO: surrender
-# TODO: Insurance
-# TODO: Splitting
-
-# UP: payout, card remainder, deck number
+# UP: display rules
+# UP: corrected standard payout to 1:1 and blackjack to 3/2 or 6/5
