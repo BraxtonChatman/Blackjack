@@ -3,7 +3,7 @@
 This script runs a simulation of a game of Blackjack
 """
 from random import randint
-card_remainder_set = 400
+card_remainder_set = 52
 deck_number_set = 8
 payout_rate_set = 1.5
 shuffled_deck = []
@@ -80,7 +80,7 @@ class Player:
         global discard_deck
 
         # shuffle discard into deck if too few cards remain
-        if len(shuffled_deck) < card_remainder_set:
+        if len(shuffled_deck) <= card_remainder_set:
             shuffled_deck += discard_deck
             discard_deck = []
 
@@ -197,13 +197,74 @@ def display_rules():
 
 def change_settings():
     """enter menu for user to change game settings or return to home menu"""
-    pass
-    # TODO: card remainder limit
-    # TODO: surrender
-    # TODO: Insurance
-    # TODO: Splitting
-    # TODO: payout level
-    # TODO: deck number (relate to card remainder limit)
+    global deck_number_set
+    global payout_rate_set
+    global card_remainder_set
+
+    setting_selection = ""
+    setting_input = ""
+    while setting_selection not in ["5", "q", "quit", "return", "exit", "main", "leave", "menu"]:
+        print()
+        print("-" * 70)
+        print("Settings:\n")
+        print("Decks:", deck_number_set)
+        print("Payout Rate:", payout_rate_set)
+        print("Card Remainder:", card_remainder_set)
+        print()
+        print("1. Number of Decks")
+        print("2. Payout Rate")
+        print("3. Card Remainder Before Shuffle")
+        print("4. Restore to default")
+        print("5. Return to Main Menu")
+        setting_selection = input()
+
+        # Number of Decks
+        if setting_selection == "1":
+            print("\nWARNING: This setting can break the game if improperly selected")
+            setting_input =  input("Enter the number of decks to be used in the game (1-10):")
+            while setting_input not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
+                setting_input = input("\nYou must select a number of decks between 1 and 10 (8 default): ")
+            deck_number_set = int(setting_input)
+            if setting_input == "1":
+                input("Card remainder has been set to 0 by default")
+                card_remainder_set = 0
+
+        # Payout Rate
+        elif setting_selection == "2":
+            print("\nSelect the Payout Rate you would like to play with\n1.  3/2\n2.  6/5")
+            setting_input =  input()
+            while setting_input not in ["1", "2"]:
+                setting_input = input("\nYou must select either\n1.  3/2\n2.  6/5\n")
+            if setting_input == "1":
+                payout_rate_set = 3/2
+            elif setting_input == "2":
+                payout_rate_set = 6/5
+
+        # Cut Card
+        elif setting_selection == "3":
+            print("\nWARNING: This setting can break the game if improperly selected")
+            print("Enter the number of cards (0 - 100) left in draw before reshuffling")
+            setting_input = input("or input \"exit\" to return: ")
+            while not is_int(setting_input) or float(setting_input) > 100 or float(setting_input) < 0:
+                if setting_input == "exit":
+                    break
+                setting_input = input("\nYou must input \"exit\" or a number 0-100: ")
+            if is_int(setting_input):
+                card_remainder_set = int(setting_input)
+        
+        # default settings
+        elif setting_selection == "4":
+            setting_input = input("\nAre you sure you would like to reset the settings? (y/n)")
+            while setting_input.lower() not in ["y", "ye", "yes", "1", "n", "no", "0"]:
+                setting_input = input("Please input (y/n), would you like to reset the settings?")
+            if setting_input.lower() in ["1", "y", "ye", "yes"]:
+                deck_number_set = 8
+                payout_rate_set = 1.5
+                card_remainder_set = 52
+                input("Settings have been reset.")
+                
+        setting_input = ""
+
 
 
 def is_float(string_value):
@@ -431,10 +492,10 @@ if __name__ == '__main__':
 
 # TODO: write display_rules function
 # TODO: update printing and hitting and card dict to accomodate suit
-# TODO: write change_settings function
 # TODO: Add options for double down and split
-# TODO: payout rate changes in win for blackjack vs not
+# TODO: different payout for win vs blackjack
+# TODO: surrender
+# TODO: Insurance
+# TODO: Splitting
 
-
-# UP: hit adds fixed to add "J", "Q", "K", "A" to hand
-# UP: fix bug shuffling strings into deck
+# UP: payout, card remainder, deck number
