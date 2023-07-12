@@ -47,18 +47,25 @@ class Player:
 
     def prompt_move(self):
         """prompt user for the move they would like to make on their turn"""
+        can_double = False
         while not self.stayed and not self.bust:
+            if self.hand_value[0] < 21 and len(self.hand) == 2 and self.play_cash >= self.wager_amount:
+                can_double = True
             self.print_player()
             print("\nPlease select your action: ")
             print("1. Hit")
             print("2. Stay")
+            if can_double:
+                print("3. Double Down")
             player_move_input = input()
 
             # input validation loop
-            while player_move_input.strip().lower() not in ["1", "2", "h", "hit", "s", "stay"]:
+            while player_move_input.strip().lower() not in ["1", "2", "h", "hit", "s", "stay", "3", "d", "double", "double down"]:
                 print("\nPlease input valid selection: ")
                 print("1. Hit")
                 print("2. Stay")
+                if can_double:
+                    print("3. Double Down")
                 player_move_input = input()
             player_move_input = player_move_input.strip().lower()
 
@@ -74,6 +81,16 @@ class Player:
             elif player_move_input in ["2", "s", "stay"]:
                 input("\nYou stayed.\n")
                 self.stay()
+
+            # double down
+            elif player_move_input in ["3", "d", "double", "double down"] and can_double:
+                self.play_cash -= self.wager_amount
+                self.wager_amount *= 2
+                self.hit()
+                self.stay()
+                can_double = False
+                self.print_player()
+
         self.stayed = False 
 
     def hit(self):
@@ -204,7 +221,7 @@ def display_rules():
     print(("\nNotes about this program:\n"
           "    -You may change the number of decks used in settings\n"
           "    -You may change the reshuffle limit in settings\n"
-          "    -Splitting and Doubling down are not included\n"
+          "    -Splitting is not included\n"
           "    -Insurance and Surrender are not included"))
     
     input()
@@ -503,7 +520,3 @@ def main():
    
 if __name__ == '__main__':
     main()
-
-
-# UP: display rules
-# UP: corrected standard payout to 1:1 and blackjack to 3/2 or 6/5
